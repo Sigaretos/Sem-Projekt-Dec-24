@@ -12,6 +12,7 @@ namespace Sem_Projekt_Dec_24.Data
 {
     public class DatabaseManager
     {
+
         private readonly string _connectionString;
         public BindingList<Products> ProductList { get; set; } = new BindingList<Products>();
 
@@ -160,6 +161,34 @@ namespace Sem_Projekt_Dec_24.Data
 
         // Read methods for storage
         public List<Products> GetProducts()
+        public List<Items> GetItems()
+        {
+            List<Items> itemList = new List<Items>();
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+                string query = "SELECT * FROM Items";
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    using (SqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            Items e = new Items(
+                                reader.GetInt32(0),
+                                reader.GetString(1),
+                                reader.GetString(2),
+                                reader.GetInt32(3)
+                            );
+
+                            itemList.Add(e);
+                        }
+                    }
+                }
+            }
+            return itemList;
+        }
+        public List<Customers> GetCustomers()
         {
             List<Products> productList = new List<Products>();
             using (SqlConnection connection = new SqlConnection(_connectionString))
@@ -295,6 +324,8 @@ namespace Sem_Projekt_Dec_24.Data
 
         // Delete methods for Actors
         public void DeleteEmployee(Employees employee)
+        // Add Item to Storage Method
+        public void AddItemsToStorage(Items items)
         {
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
@@ -311,6 +342,8 @@ namespace Sem_Projekt_Dec_24.Data
         }
 
         public void DeleteCustomer(Customers customer)
+        // Add Product to Storage Method
+        public void AddProductToStorage(Products products)
         {
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
