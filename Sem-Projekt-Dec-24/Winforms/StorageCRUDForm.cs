@@ -19,13 +19,7 @@ using iText.Layout.Properties;
 using Sem_Projekt_Dec_24.Data;
 using Sem_Projekt_Dec_24.Tables;
 using Sem_Projekt_Dec_24.Winforms;
-using iText.Kernel.Pdf;
 using iText.Layout;
-using iText.Layout.Element;
-using iText.Layout.Properties;
-using iText.Kernel.Colors;
-using iText.Kernel.Pdf.Canvas.Draw;
-using Sem_Projekt_Dec_24.Tables;
 
 namespace Sem_Projekt_Dec_24.Winforms
 {
@@ -53,8 +47,16 @@ namespace Sem_Projekt_Dec_24.Winforms
             LoadItems();
             dgvStorageItems.DataSource = ItemList;
 
+
+            for (int i = 1; i <= 25; i++)
+            {
+                cmbAmount.Items.Add(i);
+            }
+            cmbAmount.SelectedIndex = 0;
+
             LoadPurchaseOrders();
             LoadPurchaseOrderInvoices();
+
         }
 
         // Loading Products Method
@@ -532,6 +534,67 @@ namespace Sem_Projekt_Dec_24.Winforms
             }
 
             MessageBox.Show($"PDF Invoice created at: {filePath}");
+        }
+
+        private void btnCreateProduct_Click(object sender, EventArgs e)
+        {
+            if (dgvStorageProducts.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Please select a product from the list.");
+                return;
+            }
+
+            if (cmbAmount.SelectedItem == null)
+            {
+                MessageBox.Show("Please select an amount.");
+                return;
+            }
+
+            var selectedRow = dgvStorageProducts.SelectedRows[0];
+            var selectedProduct = (Products)selectedRow.DataBoundItem;
+            if (selectedRow.DataBoundItem is Products product)
+            {
+                selectedProduct = product;
+            }
+            else
+            {
+                MessageBox.Show("Selected row does not contain a valid product.");
+                return;
+            }
+            int productionModifier = dgvStorageProducts.SelectedRows[0].Index + 1;
+            string ChosenAmount = cmbAmount.SelectedItem.ToString();
+            int selectedAmount = productionModifier * Int32.Parse(ChosenAmount);
+            try
+            {
+                foreach (var item in ItemList)
+                {
+                    if (item.ItemStock <= 0)
+                    {
+                        MessageBox.Show("There is not enough items to create the product");
+                    }
+                    else
+                    {
+                        item.ItemStock = item.ItemStock - selectedAmount;
+                        _dbManager.UpdateItemStockDown(item.ItemId, item.ItemStock);
+                    }
+                }
+                selectedProduct.ProductStock = selectedProduct.ProductStock + selectedAmount;
+                _dbManager.UpdateProductStockUp(selectedProduct.ProductId, selectedProduct.ProductStock);
+
+                dgvStorageItems.DataSource = null;
+                dgvStorageItems.DataSource = ItemList;
+                dgvStorageItems.Refresh();
+
+                dgvStorageProducts.DataSource = null;
+                dgvStorageProducts.DataSource = ProductList;
+                dgvStorageProducts.Refresh();
+
+                MessageBox.Show("Product added successfully and items removed from storage.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occurred while adding the product: {ex.Message}");
+            }
         }
 
         private void btnPurchaseItem_Click(object sender, EventArgs e)
